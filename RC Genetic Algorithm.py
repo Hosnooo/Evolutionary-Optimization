@@ -653,18 +653,81 @@ def refreshment_test():
     print(df)
     df.to_csv(results_dir + 'output_ref.csv', index=False, header=False)
 
+def basic_runs():
+    repetitions = 9
+    global strong_to_win, crossover_prop, mutation_prop, results_dir
+
+    results_dir = os.path.join(os.path.dirname(abs_path), 'Results/basic/')
+    if not os.path.isdir(results_dir):
+        os.makedirs(results_dir)
+
+    #first_run_params = [0.9, 0.8, 0.01]
+    strong_to_win, crossover_prop, mutation_prop = 0.9, 0.8, 0.01
+    params = [[strong_to_win, crossover_prop, mutation_prop]]
+
+    problem = Genetic_Algorithm()
+    problem.Run()
+    printer = "strong_to_win, crossover_prop, mutation_prop = 0.9, 0.8, 0.01"
+    plt.figure(1)
+    plt.plot(list(range(1,problem.generation)), problem.best_individual_history, label='Local Optimum Fitness')
+    plt.plot(list(range(1,problem.generation)), problem.global_optimum_history, label='Local Optimum Fitness')
+    plt.xlabel('Generation'); plt.ylabel('Fitness')
+    plt.legend()
+    plt.grid()
+    plt.title(printer)
+    #plt.show() 
+    plt.savefig(results_dir + "LocalGlobal_0.png")
+    plt.clf()
+
+    sols = [problem.global_optimum.genes]
+    fitn = [problem.global_optimum.fitness]
+
+    for i in range(repetitions):
+        #first_run_params = [0.9, 0.8, 0.01]
+        strong_to_win, crossover_prop, mutation_prop = np.random.uniform(0.7,0.9),\
+              np.random.uniform(0.7,0.9), np.random.uniform(0.01,0.05)
+        
+        params.append([strong_to_win, crossover_prop, mutation_prop])
+
+        problem = Genetic_Algorithm()
+        problem.Run()
+        printer = "strong_to_win, crossover_prop, mutation_prop = %.3f, %.3f, %.4f" %(strong_to_win,crossover_prop,mutation_prop)
+        plt.figure(1)
+        plt.plot(list(range(1,problem.generation)), problem.best_individual_history, label='Local Optimum Fitness')
+        plt.plot(list(range(1,problem.generation)), problem.global_optimum_history, label='Global Optimum Fitness')
+        plt.xlabel('Generation'); plt.ylabel('Fitness')
+        plt.legend()
+        plt.grid()
+        plt.title(printer)
+        #plt.show() 
+        plt.savefig(results_dir + "LocalGlobal_%s.png"  %(i+1))
+        plt.clf()
+        sols.append(problem.global_optimum.genes)
+        fitn.append(problem.global_optimum.fitness)
+    params = np.array(params)
+    sols = np.array(sols)
+    df = pd.DataFrame([params[:,0], params[:,1],params[:,2], sols[:,0],sols[:,1],sols[:,2], fitn]).T
+    print(df)
+    df.to_csv(results_dir + 'output_basic.csv', index=False, header=False)
+
+
 
 if __name__ == "__main__":
     rnd.seed(time.time())
-    if 0:
-        report_generator(param='elitism')
-    elif 0:
-        problem = Genetic_Algorithm()
-        problem.Run()
-        if 1:
-            print("Number of Generations: ", problem.generation)
-            print("Optimum Solution: ", *problem.global_optimum.genes, ", Fitness: ", problem.global_optimum.fitness)
-            print("Stuck Percent: ", problem.stuck_percent)
-            print("Number of Refreshments: ", problem.number_of_refreshments)
+
+    if 0: 
+        if 0:
+            report_generator(param='elitism')
+        elif 0:
+            problem = Genetic_Algorithm()
+            problem.Run()
+            if 1:
+                print("Number of Generations: ", problem.generation)
+                print("Optimum Solution: ", *problem.global_optimum.genes, ", Fitness: ", problem.global_optimum.fitness)
+                print("Stuck Percent: ", problem.stuck_percent)
+                print("Number of Refreshments: ", problem.number_of_refreshments)
+        else:
+            refreshment_test()
     else:
-        refreshment_test()
+        basic_runs()
+
