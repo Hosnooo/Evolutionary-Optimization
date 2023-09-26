@@ -460,7 +460,7 @@ def report_generator(param):
     repitition = 10
     opt_locals = []; opt_globals = []; opt_sols = []
     if param == "stbs" or param == "x-over":
-        parameters = np.linspace(0.7,0.9,6)
+        parameters = np.linspace(0.5,0.9,10)
     elif param == "mutation":
         parameters = np.linspace(0.00,0.05,6)
     elif param == "elitism":
@@ -538,7 +538,7 @@ def report_generator(param):
 
     plt.figure(3)
     #plt.plot(parameters, opt_locals,'-o', label = 'Optimum Final Local Fitness')
-    plt.plot(parameters/problem.population_size*100, opt_globals,'-o', label = 'Optimum Global Fitness')
+    plt.plot(parameters, opt_globals,'-o', label = 'Optimum Global Fitness')
     plt.xlabel(printer2); plt.ylabel('Final Soultion Fitness')
     plt.legend()
     plt.grid()
@@ -547,12 +547,12 @@ def report_generator(param):
     plt.savefig(results_dir + "output_%s.png" %printer2)
 
     opt_sols = np.array(opt_sols)
-    table = [parameters, opt_sols[:,0],opt_sols[:,1], opt_sols[:,2], opt_globals]
+    table = [parameters]; table.extend([opt_sols[:,i] for i in range(len(opt_sols[0,:]))]); table.append(opt_globals)
     df = pd.DataFrame(table).T
-    heads = [printer2,'x_1','x_2','x_3', 'Fitness']
-    df.columns= heads
+    #heads = [printer2,'x_1','x_2','x_3', 'Fitness']
+    #df.columns= heads
     print(df)
-    df.to_csv(results_dir + 'output_%s.csv' %printer2, index=False, header=heads)
+    df.to_csv(results_dir + 'output_%s.csv' %printer2, index=False, header=False)
 
 
 def refreshment_test():
@@ -630,8 +630,6 @@ def refreshment_test():
 
             average_globals.append(statistics.mean(global_finals))
 
-
-
         #print(average_globals)
         ref_noref_avergae.append(average_globals)
     
@@ -645,8 +643,6 @@ def refreshment_test():
     plt.title("Average Fitness of Each Combination" )
     #plt.show() 
     plt.savefig(results_dir + "avg_ref%s.png")
-
-
 
     nos_refresh = np.array(nos_refresh)
     df = pd.DataFrame(nos_refresh).T
@@ -706,7 +702,9 @@ def basic_runs():
         fitn.append(problem.global_optimum.fitness)
     params = np.array(params)
     sols = np.array(sols)
-    df = pd.DataFrame([params[:,0], params[:,1],params[:,2], sols[:,0],sols[:,1],sols[:,2], fitn]).T
+    table = [params[:,i] for i in range(len(params[0,:]))]; table.extend([sols[:,i] for i in range(len(params[0,:]))]);
+    table.append(fitn)
+    df = pd.DataFrame(table).T
     print(df)
     df.to_csv(results_dir + 'output_basic.csv', index=False, header=False)
 
@@ -715,9 +713,9 @@ def basic_runs():
 if __name__ == "__main__":
     rnd.seed(time.time())
 
-    if 0: 
-        if 0:
-            report_generator(param='elitism')
+    if 1: 
+        if 1:
+            report_generator(param='stbs')
         elif 0:
             problem = Genetic_Algorithm()
             problem.Run()
@@ -730,4 +728,3 @@ if __name__ == "__main__":
             refreshment_test()
     else:
         basic_runs()
-
