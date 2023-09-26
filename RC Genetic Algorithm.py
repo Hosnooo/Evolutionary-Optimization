@@ -702,7 +702,7 @@ def basic_runs():
         fitn.append(problem.global_optimum.fitness)
     params = np.array(params)
     sols = np.array(sols)
-    table = [params[:,i] for i in range(len(params[0,:]))]; table.extend([sols[:,i] for i in range(len(params[0,:]))]);
+    table = [params[:,i] for i in range(len(params[0,:]))]; table.extend([sols[:,i] for i in range(len(sols[0,:]))]);
     table.append(fitn)
     df = pd.DataFrame(table).T
     print(df)
