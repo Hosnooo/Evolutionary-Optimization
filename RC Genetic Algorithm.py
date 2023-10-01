@@ -8,9 +8,20 @@ import operator
 from tabulate import tabulate
 import pandas as pd
 import statistics
+import os
+import logging
+
+__FILE_BASE__ = r"E:\KFUPM - Masters\1\Intelligence Control\Results\log.txt"
+if os.path.exists(__FILE_BASE__):
+  os.remove(__FILE_BASE__)
+
+logging.basicConfig(filename=__FILE_BASE__, level=logging.INFO)
+logging.debug("Debug logging test...")
+log_flag = 1 # log file flag
+
 
 '''Parameters'''
-population_size = 20; num_genes = 3; limits = [0., 10.]; # Problem Size and Boundaries
+population_size = 20; num_genes = 3; limits = [[0,0,0],[10,10,10]]; # Problem Size and Boundaries
 selection_method ='tournment'; tournment_players_num = 2; strong_to_win = 0.9; # Selection Parameters
 crossover_method = 'BLX-a'; crossover_prop = 0.8; # Cross-Over parameters
 mutation_method = 'random'; mutation_prop = 0.01; # Mutation Parameters
@@ -18,6 +29,8 @@ num_elites = 0; # Elistism (number of elite solutions)
 max_gen = 100; tolerance = 1e-6; # Termination parameters
 refreshment_flag = 0 # Population disrubtion flag
 abs_path = os.path.abspath(__file__); results_dir = os.path.join(os.path.dirname(abs_path), 'Results/') # Path for saving Results.
+
+total_evals = 0 # Evaluations Count
 
 class Chromosome:
 
@@ -33,6 +46,7 @@ class Chromosome:
         x1 = self.genes[0]; x2 = self.genes[1]; x3 = self.genes[2]
         fitness = pow(x1,2) + 2*pow(x2,2) + 3*pow(x3,2) \
         + x1*x2 + x2*x3 - 8*x1 - 16*x2 - 32*x3 + 110
+        # fitness = self.genes[0]*(1+self.genes[1]) - 1e3*(abs(pow(self.genes[0],2) + pow(self.genes[1],2) - 1))
 
         if fitness == 0:
             fitness = 1e-20     # Case: division by Zero
@@ -48,7 +62,10 @@ class Chromosome:
         #self.fitness_eval()
 
     def fitness_eval(self, func = None):
-        if(func == None):
+        global total_evals
+        total_evals = total_evals + 1
+
+        if(func == None):         
             self.fitness = self.__fitness_function__()
         else:
             self.fitness = func()
@@ -76,7 +93,7 @@ class Genetic_Algorithm:
         self.best_individual_history = []
         self.global_optimum_history = []
         self.current_error = 1.; self.last_error = 1.
-
+        
     def __Tournment_Selection__(self, players, stgr_w_per = 0.9):
         '''1. Indices of individuals that will go for a tournment,
         2. Stronger to win percentage'''
@@ -155,10 +172,10 @@ class Genetic_Algorithm:
 
                 # Feasibility Assurance
                 if not (self.bounds is None):
-                    if new_gene_1 < min(self.bounds): new_gene_1 = min(self.bounds)
-                    if new_gene_1 > max(self.bounds): new_gene_1 = max(self.bounds)
-                    if new_gene_2 < min(self.bounds): new_gene_2 = min(self.bounds)
-                    if new_gene_2 > max(self.bounds): new_gene_2 = max(self.bounds)
+                    if new_gene_1 < self.bounds[0][j]: new_gene_1 = self.bounds[0][j]
+                    if new_gene_1 > self.bounds[1][j]: new_gene_1 = self.bounds[1][j]
+                    if new_gene_2 < self.bounds[0][j]: new_gene_2 = self.bounds[0][j]
+                    if new_gene_2 > self.bounds[1][j]: new_gene_2 = self.bounds[1][j]
 
                 genetics_1.append(new_gene_1)
                 genetics_2.append(new_gene_2)
@@ -176,11 +193,11 @@ class Genetic_Algorithm:
 
                 # Feasibility Assurance
                 if not (self.bounds is None):
-                    if new_gene_1 > max(self.bounds): new_gene_1 = max(self.bounds)
-                    if new_gene_2 < min(self.bounds): new_gene_2 = min(self.bounds)
-                    if new_gene_2 > max(self.bounds): new_gene_2 = max(self.bounds)
-                    if new_gene_3 < min(self.bounds): new_gene_3 = min(self.bounds)
-                    if new_gene_3 > max(self.bounds): new_gene_3 = max(self.bounds)
+                    if new_gene_1 > self.bounds[1][j]: new_gene_1 = self.bounds[1][j]
+                    if new_gene_2 < self.bounds[0][j]: new_gene_1 = self.bounds[0][j]
+                    if new_gene_2 > self.bounds[1][j]: new_gene_1 = self.bounds[1][j]
+                    if new_gene_3 < self.bounds[0][j]: new_gene_1 = self.bounds[0][j]
+                    if new_gene_3 > self.bounds[1][j]: new_gene_1 = self.bounds[1][j]
 
                 genetics_1.append(new_gene_1)
                 genetics_2.append(new_gene_2)
@@ -206,40 +223,46 @@ class Genetic_Algorithm:
             self.new_population.append(Chromosome(genetics_1))
             self.new_population.append(Chromosome(genetics_2))
 
-    def __Random_Mutation__(self):
+    def __Random_Mutation__(self, mutat_prop):
+        '''1. Mutation Probability'''
 
-        i = rnd.randint(0,self.population_size-1)
-        j = rnd.randint(0,self.new_population[i].number_of_genes-1)
-        self.new_population[i].genes[j] = np.random.uniform(self.bounds[0],self.bounds[1])
+        for i in range(self.population_size):
+            for j in range(self.new_population[i].number_of_genes):
+                prop = np.random.uniform(0.0,1.0)
+                if prop < mutat_prop:
+                    self.new_population[i].genes[j] = np.random.uniform(self.bounds[0][j],self.bounds[1][j])
     
-    def __Non_Uniform_Mutation__(self, b = 2):
-        '''1. degree of dependency on the number of generations'''
+    def __Non_Uniform_Mutation__(self, mutat_prop, b = 2):
+        '''1. degree of dependency on the number of generations
+           2. Mutation Probability
+        '''
+        for i in range(self.population_size):
+            for j in range(self.new_population[i].number_of_genes):
+                prop = np.random.uniform(0.0,1.0)
+                if prop < mutat_prop:
+                    taw = np.random.choice([0,1], size = 1)
+                    c = self.new_population[i].genes[j]
 
-        i = rnd.randint(0,self.population_size-1)
-        j = rnd.randint(0,self.new_population[i].number_of_genes-1)
-        taw = np.random.choice([0,1], size = 1)
-        c = self.new_population[i].genes[j]
+                    if taw == 0:
+                        y = self.bounds[1][j] - c
+                    else:
+                        y = -1*(c - self.bounds[0][j])
 
-        if taw == 0:
-            y = max(self.bounds) - c
-        else:
-            y = -1*(c - min(self.bounds))
+                    r = np.random.uniform(0.0,1.0)
+                    del_fact = y * (1 - pow(r,1-pow(self.generation/self.max_generations,b)))
+                    c_dash = c + del_fact
 
-        r = np.random.uniform(0.0,1.0)
-        del_fact = y * (1 - pow(r,1-pow(self.generation/self.max_generations,b)))
-        c_dash = c + del_fact
-
-        # Feasibility Assurance
-        if c_dash > max(self.bounds): c_dash = max(self.bounds)
-        if c_dash < min(self.bounds): c_dash = min(self.bounds)
-        self.new_population[i].genes[j] = c_dash
+                    # Feasibility Assurance
+                    if c_dash > self.bounds[1][j]: c_dash = self.bounds[1][j]
+                    if c_dash < self.bounds[0][j]: c_dash = self.bounds[0][j]
+                    self.new_population[i].genes[j] = c_dash
 
     def Initialize_GA(self, pop_size, n_o_g, bounds = None, max_gen = 500):
         '''Creates an initial population'''
         
-        self.bounds = bounds[:]
+        self.bounds = bounds.copy()
         self.population_size = pop_size
-        self.current_population = [Chromosome([np.random.uniform(self.bounds[0],self.bounds[1]) for i in range(n_o_g)])\
+        self.current_population = [Chromosome([np.random.uniform(self.bounds[0][i],self.bounds[1][i]) for i in range(n_o_g)])\
                                    for j in range(self.population_size)]
         self.generation = 1
         self.max_generations = max_gen
@@ -355,13 +378,12 @@ class Genetic_Algorithm:
         1. Mutation method
         2. Mutation probability'''
 
-        prop = np.random.uniform(0.0,1.0)
-        if prop < mutat_prop:
-            if method == 'random':
-                self.__Random_Mutation__()
-            elif method == 'non-uniform':
-                self.__Non_Uniform_Mutation__()
-            else: None
+
+        if method == 'random':
+            self.__Random_Mutation__(mutat_prop=mutat_prop)
+        elif method == 'non-uniform':
+            self.__Non_Uniform_Mutation__(mutat_prop=mutat_prop)
+        else: None
         
         Flag = 0
         if Flag:
@@ -385,13 +407,16 @@ class Genetic_Algorithm:
 
     def __Refresh_GA__(self):
         self.current_population[round(self.population_size/2):] = \
-            [Chromosome([np.random.uniform(self.bounds[0],self.bounds[1]) \
+            [Chromosome([np.random.uniform(self.bounds[0][i],self.bounds[1][i]) \
                          for i in range(self.current_population[0].number_of_genes)])\
                                    for j in range(self.population_size)]
         
     def __finalise_new_population__(self, refreshment_flag = 0):
         
         if refreshment_flag and self.stuck_percent >= 0.2:
+            logging.info("Didn't change percent: " + str(self.stuck_percent))
+            logging.info("refreshments: " + str(self.number_of_refreshments))
+
             self.__Refresh_GA__()
             self.stuck_percent = 0
             self.number_of_refreshments = self.number_of_refreshments + 1
@@ -401,7 +426,7 @@ class Genetic_Algorithm:
                 self.new_population = self.new_population[len(self.new_population) - self.population_size:]
                 # Could be optimised to remove the worst solutions: Future Implementation
             elif len(self.new_population) < self.population_size:
-                extension = [Chromosome([np.random.uniform(self.bounds[0],self.bounds[1])\
+                extension = [Chromosome([np.random.uniform(self.bounds[0][i],self.bounds[1][i])\
                                           for i in range(self.current_population[0].number_of_genes)])\
                                             for j in range(self.population_size - len(self.new_population))]
                 self.new_population.extend(extension)
@@ -441,7 +466,12 @@ class Genetic_Algorithm:
         return self.global_optimum
 
     def Run(self):
+        # Debugging Info
+        global total_evals
+        total_evals = 0
+
         self.__Run_Algorithm__()
+        logging.info("Total Evals = " + str(total_evals))
     
     def print_population(self, population):
         for i in range(len(population)):
@@ -644,13 +674,15 @@ def refreshment_test():
     #plt.show() 
     plt.savefig(results_dir + "avg_ref%s.png")
 
+
+
     nos_refresh = np.array(nos_refresh)
     df = pd.DataFrame(nos_refresh).T
     print(df)
     df.to_csv(results_dir + 'output_ref.csv', index=False, header=False)
 
 def basic_runs():
-    repetitions = 9
+    repetitions = 0
     global strong_to_win, crossover_prop, mutation_prop, results_dir
 
     results_dir = os.path.join(os.path.dirname(abs_path), 'Results/basic/')
@@ -702,7 +734,7 @@ def basic_runs():
         fitn.append(problem.global_optimum.fitness)
     params = np.array(params)
     sols = np.array(sols)
-    table = [params[:,i] for i in range(len(params[0,:]))]; table.extend([sols[:,i] for i in range(len(sols[0,:]))]);
+    table = [params[:,i] for i in range(len(params[0,:]))]; table.extend([sols[:,i] for i in range(len(sols[0,:]))])
     table.append(fitn)
     df = pd.DataFrame(table).T
     print(df)
@@ -713,7 +745,7 @@ def basic_runs():
 if __name__ == "__main__":
     rnd.seed(time.time())
 
-    if 1: 
+    if 0: 
         if 1:
             report_generator(param='stbs')
         elif 0:
@@ -727,4 +759,7 @@ if __name__ == "__main__":
         else:
             refreshment_test()
     else:
+        if not refreshment_flag:
+            logging.info("No Refreshment")
         basic_runs()
+
