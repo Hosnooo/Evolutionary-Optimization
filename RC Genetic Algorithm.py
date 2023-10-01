@@ -10,6 +10,7 @@ import pandas as pd
 import statistics
 import os
 import logging
+import math
 
 __FILE_BASE__ = r"E:\KFUPM - Masters\1\Intelligence Control\Results\log.txt"
 if os.path.exists(__FILE_BASE__):
@@ -223,39 +224,33 @@ class Genetic_Algorithm:
             self.new_population.append(Chromosome(genetics_1))
             self.new_population.append(Chromosome(genetics_2))
 
-    def __Random_Mutation__(self, mutat_prop):
-        '''1. Mutation Probability'''
+    def __Random_Mutation__(self, i,j):
+        '''1. Chromosome index
+        2. Gene index'''
 
-        for i in range(self.population_size):
-            for j in range(self.new_population[i].number_of_genes):
-                prop = np.random.uniform(0.0,1.0)
-                if prop < mutat_prop:
-                    self.new_population[i].genes[j] = np.random.uniform(self.bounds[0][j],self.bounds[1][j])
+        self.new_population[i].genes[j] = np.random.uniform(self.bounds[0][j],self.bounds[1][j])
     
-    def __Non_Uniform_Mutation__(self, mutat_prop, b = 2):
-        '''1. degree of dependency on the number of generations
-           2. Mutation Probability
-        '''
-        for i in range(self.population_size):
-            for j in range(self.new_population[i].number_of_genes):
-                prop = np.random.uniform(0.0,1.0)
-                if prop < mutat_prop:
-                    taw = np.random.choice([0,1], size = 1)
-                    c = self.new_population[i].genes[j]
+    def __Non_Uniform_Mutation__(self, i, j, b = 2):
+        '''1. Chromosome index
+        2. Gene index
+        3. Effect of Generation Number'''
+       
+        taw = np.random.choice([0,1], size = 1)
+        c = self.new_population[i].genes[j]
 
-                    if taw == 0:
-                        y = self.bounds[1][j] - c
-                    else:
-                        y = -1*(c - self.bounds[0][j])
+        if taw == 0:
+            y = self.bounds[1][j] - c
+        else:
+            y = -1*(c - self.bounds[0][j])
 
-                    r = np.random.uniform(0.0,1.0)
-                    del_fact = y * (1 - pow(r,1-pow(self.generation/self.max_generations,b)))
-                    c_dash = c + del_fact
+        r = np.random.uniform(0.0,1.0)
+        del_fact = y * (1 - pow(r,1-pow(self.generation/self.max_generations,b)))
+        c_dash = c + del_fact
 
-                    # Feasibility Assurance
-                    if c_dash > self.bounds[1][j]: c_dash = self.bounds[1][j]
-                    if c_dash < self.bounds[0][j]: c_dash = self.bounds[0][j]
-                    self.new_population[i].genes[j] = c_dash
+        # Feasibility Assurance
+        if c_dash > self.bounds[1][j]: c_dash = self.bounds[1][j]
+        if c_dash < self.bounds[0][j]: c_dash = self.bounds[0][j]
+        self.new_population[i].genes[j] = c_dash
 
     def Initialize_GA(self, pop_size, n_o_g, bounds = None, max_gen = 500):
         '''Creates an initial population'''
@@ -378,12 +373,31 @@ class Genetic_Algorithm:
         1. Mutation method
         2. Mutation probability'''
 
+        if mutat_prop == 0:
+            return
+        
+        n_o_g_Mutate = mutat_prop*self.population_size*self.global_optimum.number_of_genes
+        logging.info("n_o_g_Mutate: " + str(n_o_g_Mutate))
+        
+        doubtful_muatations, sure_mutations = math.modf(n_o_g_Mutate)
+        sure_mutations = round(sure_mutations)
+        logging.info("doubtful_muatations: " + str(doubtful_muatations))
+        logging.info("sure_muatations: " + str(sure_mutations))
 
-        if method == 'random':
-            self.__Random_Mutation__(mutat_prop=mutat_prop)
-        elif method == 'non-uniform':
-            self.__Non_Uniform_Mutation__(mutat_prop=mutat_prop)
-        else: None
+        prop = np.random.uniform(0,1)
+        logging.info("prop: " + str(prop))
+        if prop < doubtful_muatations:
+            sure_mutations = sure_mutations + 1
+        logging.info("sure_muatations: " + str(sure_mutations))
+
+        for n in range(sure_mutations):
+            i = rnd.randint(0,self.population_size - 1)
+            j = rnd.randint(0,self.global_optimum.number_of_genes - 1)     
+            if method == 'random':
+                self.__Random_Mutation__(i,j)
+            elif method == 'non-uniform':
+                self.__Non_Uniform_Mutation__(i,j)
+            else: None
         
         Flag = 0
         if Flag:
@@ -745,9 +759,9 @@ def basic_runs():
 if __name__ == "__main__":
     rnd.seed(time.time())
 
-    if 0: 
+    if 1: 
         if 1:
-            report_generator(param='stbs')
+            report_generator(param='mutation')
         elif 0:
             problem = Genetic_Algorithm()
             problem.Run()
