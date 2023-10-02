@@ -139,90 +139,98 @@ class Genetic_Algorithm:
             self.new_population.append(Chromosome(genetics_1))
             self.new_population.append(Chromosome(genetics_2))
     
-    def __Simple_CrossOver__(self, dads, moms):
-        '''1. Array of Left hand side parents
-        2. Array of Right hand side parents'''
+    def __Simple_CrossOver__(self, dad, mom):
+        '''1. Left hand side parent
+        2. Right hand side parent'''
 
-        for i in range(len(dads)):
-            rand_idx = rnd.randint(0,dads[0].number_of_genes-2)
-            genetics_1 = dads[i].genes[:rand_idx+1] + moms[i].genes[rand_idx+1:]
-            genetics_2 = moms[i].genes[:rand_idx+1] + dads[i].genes[rand_idx+1:]
-            self.new_population.append(Chromosome(genetics_1))
-            self.new_population.append(Chromosome(genetics_2))
+        rand_idx = rnd.randint(0,dad.number_of_genes-2)
+        genetics_1 = dad.genes[:rand_idx+1] + mom.genes[rand_idx+1:]
+        genetics_2 = mom.genes[:rand_idx+1] + dad.genes[rand_idx+1:]
+        self.new_population.append(Chromosome(genetics_1))
+        self.new_population.append(Chromosome(genetics_2))
 
-    def __Arethmetical_CrossOver__(self, dads, moms):    
-        for i in range(len(dads)):
-            combination_factor = np.random.uniform(0.0,1.0)
-            genetics_1 = list(np.add(combination_factor*(np.subtract(dads[i].genes,moms[i].genes)),moms[i].genes))
-            genetics_2 = list(np.add(combination_factor*(np.subtract(moms[i].genes,dads[i].genes)),dads[i].genes))                   
-            self.new_population.append(Chromosome(genetics_1))
-            self.new_population.append(Chromosome(genetics_2))
+    def __Arethmetical_CrossOver__(self, dad, mom):
+        '''1. Left hand side parent
+        2. Right hand side parent'''
 
-    def __BLX_Alpha_CrossOver__(self, dads, moms):
-        for i in range(len(dads)):
-            genetics_1 = []; genetics_2 = []
-            alpha = 0.1 #np.random.uniform(0.0,0.5)
-            # Generate two children within the modified range of parents (Exploration + Exploitation)
+        combination_factor = np.random.uniform(0.0,1.0)
+        genetics_1 = list(np.add(combination_factor*(np.subtract(dad.genes,mom.genes)),mom.genes))
+        genetics_2 = list(np.add(combination_factor*(np.subtract(mom.genes,dad.genes)),dad.genes))                   
+        self.new_population.append(Chromosome(genetics_1))
+        self.new_population.append(Chromosome(genetics_2))
 
-            for j in range(dads[i].number_of_genes):
-                c_max = max([dads[i].genes[j], moms[i].genes[j]])
-                c_min = min([dads[i].genes[j], moms[i].genes[j]])
-                h_max = c_max + alpha*(c_max - c_min)
-                h_min = c_min - alpha*(c_max - c_min)
-                new_gene_1, new_gene_2 = np.random.uniform(h_min,h_max,2)
+    def __BLX_Alpha_CrossOver__(self, dad, mom):
+        '''1. Left hand side parent
+        2. Right hand side parent'''
 
-                # Feasibility Assurance
-                if not (self.bounds is None):
-                    if new_gene_1 < self.bounds[0][j]: new_gene_1 = self.bounds[0][j]
-                    if new_gene_1 > self.bounds[1][j]: new_gene_1 = self.bounds[1][j]
-                    if new_gene_2 < self.bounds[0][j]: new_gene_2 = self.bounds[0][j]
-                    if new_gene_2 > self.bounds[1][j]: new_gene_2 = self.bounds[1][j]
+        genetics_1 = []; genetics_2 = []
+        alpha = 0.1 #np.random.uniform(0.0,0.5)
+        # Generate two children within the modified range of parents (Exploration + Exploitation)
 
-                genetics_1.append(new_gene_1)
-                genetics_2.append(new_gene_2)
-                    
-            self.new_population.append(Chromosome(genetics_1))
-            self.new_population.append(Chromosome(genetics_2))
+        for j in range(dad.number_of_genes):
+            c_max = max([dad.genes[j], mom.genes[j]])
+            c_min = min([dad.genes[j], mom.genes[j]])
+            h_max = c_max + alpha*(c_max - c_min)
+            h_min = c_min - alpha*(c_max - c_min)
+            new_gene_1, new_gene_2 = np.random.uniform(h_min,h_max,2)
 
-    def __Linear_CrossOver__(self, dads, moms):
-       for i in range(len(dads)):
-            genetics_1 = []; genetics_2 = []; genetics_3 = []
-            # Generate three children & choose the best 2
-            for j in range(dads[i].number_of_genes):
-                new_gene_1, new_gene_2, new_gene_3 = 0.5*(dads[i].genes[j] + moms[i].genes[j]),\
-                3/2*dads[i].genes[j] - 0.5*moms[i].genes[j], 3/2*moms[i].genes[j] - 0.5*dads[i].genes[j]
+            # Feasibility Assurance
+            if not (self.bounds is None):
+                if new_gene_1 < self.bounds[0][j]: new_gene_1 = self.bounds[0][j]
+                if new_gene_1 > self.bounds[1][j]: new_gene_1 = self.bounds[1][j]
+                if new_gene_2 < self.bounds[0][j]: new_gene_2 = self.bounds[0][j]
+                if new_gene_2 > self.bounds[1][j]: new_gene_2 = self.bounds[1][j]
 
-                # Feasibility Assurance
-                if not (self.bounds is None):
-                    if new_gene_1 > self.bounds[1][j]: new_gene_1 = self.bounds[1][j]
-                    if new_gene_2 < self.bounds[0][j]: new_gene_1 = self.bounds[0][j]
-                    if new_gene_2 > self.bounds[1][j]: new_gene_1 = self.bounds[1][j]
-                    if new_gene_3 < self.bounds[0][j]: new_gene_1 = self.bounds[0][j]
-                    if new_gene_3 > self.bounds[1][j]: new_gene_1 = self.bounds[1][j]
+            genetics_1.append(new_gene_1)
+            genetics_2.append(new_gene_2)
+                
+        self.new_population.append(Chromosome(genetics_1))
+        self.new_population.append(Chromosome(genetics_2))
 
-                genetics_1.append(new_gene_1)
-                genetics_2.append(new_gene_2)
-                genetics_3.append(new_gene_3)
+    def __Linear_CrossOver__(self, dad, mom):
+        '''1. Left hand side parent
+        2. Right hand side parent'''
+       
+        genetics_1 = []; genetics_2 = []; genetics_3 = []
+        # Generate three children & choose the best 2
+        for j in range(dad.number_of_genes):
+            new_gene_1, new_gene_2, new_gene_3 = 0.5*(dad.genes[j] + mom.genes[j]),\
+            3/2*dad.genes[j] - 0.5*mom.genes[j], 3/2*mom.genes[j] - 0.5*dad.genes[j]
 
-            genetics_list = [genetics_1, genetics_2, genetics_3]
-            fitness_list = [Chromosome(genetics_1).fitness_eval(), Chromosome(genetics_2).fitness_eval(),\
-                                        Chromosome(genetics_3).fitness_eval()]
-            genetics_list.pop(fitness_list.index(min(fitness_list))) # Drop the least fit Genetic pattern 
+            # Feasibility Assurance
+            if not (self.bounds is None):
+                if new_gene_1 > self.bounds[1][j]: new_gene_1 = self.bounds[1][j]
+                if new_gene_2 < self.bounds[0][j]: new_gene_1 = self.bounds[0][j]
+                if new_gene_2 > self.bounds[1][j]: new_gene_1 = self.bounds[1][j]
+                if new_gene_3 < self.bounds[0][j]: new_gene_1 = self.bounds[0][j]
+                if new_gene_3 > self.bounds[1][j]: new_gene_1 = self.bounds[1][j]
 
-            self.new_population.append(Chromosome(genetics_list[0]))
-            self.new_population.append(Chromosome(genetics_list[1]))
+            genetics_1.append(new_gene_1)
+            genetics_2.append(new_gene_2)
+            genetics_3.append(new_gene_3)
 
-    def __Discrete_CrossOver__(self,dads,moms):
-        for i in range(len(dads)):
-            genetics_1 = []; genetics_2 = []
-            # Generate two children of genes chosen discretely from the parent's pole
-            for j in range(dads[i].number_of_genes):
-                new_gene_1, new_gene_2 = np.random.choice([dads[i].genes[j], moms[i].genes[j]], size = 2)
-                genetics_1.append(new_gene_1)
-                genetics_2.append(new_gene_2)
-                    
-            self.new_population.append(Chromosome(genetics_1))
-            self.new_population.append(Chromosome(genetics_2))
+        genetics_list = [genetics_1, genetics_2, genetics_3]
+        fitness_list = [Chromosome(genetics_1).fitness_eval(), Chromosome(genetics_2).fitness_eval(),\
+                                    Chromosome(genetics_3).fitness_eval()]
+        genetics_list.pop(fitness_list.index(min(fitness_list))) # Drop the least fit Genetic pattern 
+
+        self.new_population.append(Chromosome(genetics_list[0]))
+        self.new_population.append(Chromosome(genetics_list[1]))
+
+    def __Discrete_CrossOver__(self,dad,mom):
+        '''1. Left hand side parent
+        2. Right hand side parent'''
+
+        genetics_1 = []; genetics_2 = []
+        # Generate two children of genes chosen discretely from the parent's pole
+        for j in range(dad.number_of_genes):
+            new_gene_1, new_gene_2 = np.random.choice([dad.genes[j], mom.genes[j]], size = 2)
+            genetics_1.append(new_gene_1)
+            genetics_2.append(new_gene_2)
+                
+        self.new_population.append(Chromosome(genetics_1))
+        self.new_population.append(Chromosome(genetics_2))
+
 
     def __Random_Mutation__(self, i,j):
         '''1. Chromosome index
@@ -326,47 +334,48 @@ class Genetic_Algorithm:
         1.Cross-Over method
         2. Cross-Over probability'''
 
-        prop = np.random.uniform(0.0,1.0)
         unzipped_pairs_list = list(zip(*self.parent_pairs))
         dads = np.take(self.current_population, unzipped_pairs_list[0][:]).tolist()
         moms = np.take(self.current_population, unzipped_pairs_list[1][:]).tolist()
 
-        if prop > cross_prop:
-            self.new_population.extend(dads + moms)
-            
-        else:
-            if method == 'flat':
-                self.__Flat_CrossOver__(dads, moms)
+        for i in range(len(dads)):
+            prop = np.random.uniform(0.0,1.0)
+            if prop > cross_prop:
+                self.new_population.extend([dads[i], moms[i]])
                 
-            elif method == 'simple':
-                self.__Simple_CrossOver__(dads,moms)
-
-            elif method == 'arithmetical':
-                self.__Arethmetical_CrossOver__(dads,moms)
-            
-            elif method == 'BLX-a':
-                self.__BLX_Alpha_CrossOver__(dads,moms)
-
-            elif method == 'linear':
-                self.__Linear_CrossOver__(dads,moms)
-            
-            elif method == 'discrete':
-                self.__Discrete_CrossOver__(dads,moms)
-
             else:
-                self.__Simple_CrossOver__(dads,moms)
+                if method == 'flat':
+                    self.__Flat_CrossOver__(dads[i], moms[i])
+                    
+                elif method == 'simple':
+                    self.__Simple_CrossOver__(dads[i],moms[i])
 
-            # Set Flag to 1 to debug the Cross-Over
-            Flag = 0
-            if Flag:
-                for i in range(len(dads)):
-                    dads[i].print_chromosome()
-                    moms[i].print_chromosome()
-                    self.new_population[2*i].print_chromosome()
-                    self.new_population[2*i+1].print_chromosome()
+                elif method == 'arithmetical':
+                    self.__Arethmetical_CrossOver__(dads[i],moms[i])
+                
+                elif method == 'BLX-a':
+                    self.__BLX_Alpha_CrossOver__(dads[i],moms[i])
 
-                    print()
-                print(i)
+                elif method == 'linear':
+                    self.__Linear_CrossOver__(dads[i],moms[i])
+                
+                elif method == 'discrete':
+                    self.__Discrete_CrossOver__(dads[i],moms[i])
+
+                else:
+                    self.__Simple_CrossOver__(dads[i],moms[i])
+
+                # Set Flag to 1 to debug the Cross-Over
+                Flag = 0
+                if Flag:
+                    for i in range(len(dads)):
+                        dads[i].print_chromosome()
+                        moms[i].print_chromosome()
+                        self.new_population[2*i].print_chromosome()
+                        self.new_population[2*i+1].print_chromosome()
+
+                        print()
+                    print(i)
 
     def Mutation(self, method = 'random', mutat_prop = 0.01):
         '''The driver function for the Mutation:
@@ -761,7 +770,7 @@ if __name__ == "__main__":
 
     if 1: 
         if 1:
-            report_generator(param='mutation')
+            report_generator(param='x-over')
         elif 0:
             problem = Genetic_Algorithm()
             problem.Run()
