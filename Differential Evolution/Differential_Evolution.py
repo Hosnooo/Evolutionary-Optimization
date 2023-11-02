@@ -101,17 +101,21 @@ class Differential_Evolution():
     def XOver(self):
         '''Crosses Over the mutants with The current population'''
 
-        self.trials.clear()
-        self.trials_cost.clear()
+        self.trials = [[None] * self.solution_size for _ in range(self.population_size)]
+        self.trials_cost = [None]*self.population_size
+
+        prop = np.random.rand(self.population_size,self.solution_size)
+        
+        prop_idx = np.where(prop < self.XOver_Factor)
+        for i in range(len(prop_idx[0])):
+            self.trials[prop_idx[0][i]][prop_idx[1][i]] = self.mutants[prop_idx[0][i]][prop_idx[1][i]]
+        
+        prop_idx = np.where(prop >= self.XOver_Factor)
+        for i in range(len(prop_idx[0])):
+            self.trials[prop_idx[0][i]][prop_idx[1][i]] = self.current_population[prop_idx[0][i]][prop_idx[1][i]]
 
         for i in range(self.population_size):
-            prop = np.random.uniform(0.0,1.0)
-            if prop > self.XOver_Factor:
-                self.trials.append(self.current_population[i])
-                self.trials_cost.append(self.current_population_cost[i])
-            else:
-                self.trials.append(self.mutants[i])
-                self.trials_cost.append(self.mutants_cost[i])
+            self.trials_cost[i] = self.cost_eval(self.trials[i])
 
     def Select(self):
         '''Selects between the current population solutions and the mutated-xovered solutions'''
