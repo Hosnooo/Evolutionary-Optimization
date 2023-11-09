@@ -1,0 +1,2 @@
+# RUN Neural_Network_experiment.py for generating investigation results
+# RUN loss_propagation.py for generating Best loss propagation plots 
